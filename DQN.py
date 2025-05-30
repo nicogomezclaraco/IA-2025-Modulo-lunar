@@ -134,6 +134,7 @@ class DQNAgent():
             state = np.array(state).reshape(1, -1)  # Convierte a array y da la forma (1, n)
             q_values = self.q_network.predict(verbose=0)
             return np.argmax(q_values[0]) 
+
     
     def update_model(self):
         """
@@ -210,18 +211,20 @@ class DQNAgent():
     
         for episode in range(self.episodes):
             state = self.lunar.reset()
+            self.state = state
             total_reward = 0
             done = False
         
             while not done:
                 # Select and take action (aquí es donde necesitas pasar el state)
-                action = self.act(state)  # self.act() ahora acepta el parámetro state
-                next_state, reward, done,action = self.lunar.take_action()
+                action = self.act()  
+                next_state, reward, done = self.lunar.take_action(action)
             
                 # Store experience
                 self.memory.push(state, action, reward, next_state, done)
             
                 state = next_state
+                self.state = state
                 total_reward += reward
             
                 # Train the model
