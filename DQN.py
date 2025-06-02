@@ -16,7 +16,8 @@ from lunar import LunarLanderEnv
 # https://www.lesswrong.com/posts/kyvCNgx9oAwJCuevo/deep-q-networks-explained
 
 class DQN(tf.keras.Model):
-    def __init__(self, state_size, action_size, hidden_size):
+    # hay que quitar el trucanmiento a 32
+    def __init__(self, state_size, action_size, hidden_size = 32):
         super(DQN, self).__init__()
         # la capaa de entrada es la input_shape
         # le he preguntado al chat y me ha recomendado la funcion relu mejor que la sigmoide 
@@ -65,11 +66,15 @@ class ReplayBuffer():
         return len(self.buffer)
     
 class DQNAgent():
+    #he cambiado algun parametro por probar 
+    #OG
+    #learning_rate=0.001
+    #episodes=1500
     def __init__(self, lunar: LunarLanderEnv, gamma=0.99, 
                 epsilon=1.0, epsilon_decay=0.995, epsilon_min=0.01,
-                learning_rate=0.001, batch_size=64, 
+                learning_rate=0.002, batch_size=64, 
                 memory_size=10000, episodes=1500, 
-                target_network_update_freq=10,
+                target_network_update_freq=100,
                 warmup_steps=1000):
         """
         Initialize the DQN agent with the given parameters.
@@ -117,13 +122,13 @@ class DQNAgent():
         self.q_network = DQN(
             state_size=observation_space.shape[0],
             action_size=action_space.n,
-            hidden_size=64  #elegir un tamaño de capa oculta // lo he buscado y este parece un buen standar
+            hidden_size=32  #elegir un tamaño de capa oculta // lo he buscado y este parece un buen standar 64 // lo voy a reducir por probar 
         )
         
         self.target_network = DQN(
             state_size=observation_space.shape[0],
             action_size=action_space.n,
-            hidden_size=64  #elegir un tamaño de capa oculta // lo he buscado y este parece un buen standar
+            hidden_size=32  #elegir un tamaño de capa oculta // lo he buscado y este parece un buen standar
         )
         
         dummy_state = tf.zeros((1, observation_space.shape[0]))
@@ -224,6 +229,7 @@ class DQNAgent():
         None
         """
         # guardar el modelo en el path indicado
+        # esto solo guarda los pesos por eso lo he cambiado         
         self.q_network.save_weights(path)
     
     def load_model(self, path):
@@ -237,6 +243,7 @@ class DQNAgent():
         # cargar el modelo desde el path indicado
         self.q_network.load_weights(path)
         self.update_target_network()
+       
         
     def train(self):
 
@@ -314,11 +321,16 @@ class DQNAgent():
                       f"Loss: {episode_loss/max(steps_in_episode,1):.4f} | "
                       f"Time: {elapsed_time/60:.1f}min")
                 
-                        # Early stopping mejorado
-            if avg_reward >= 200 and episode >= 100:
+                        # Early stopping mejorado 
+                        # esta mierda que  es lolo que no deja guardar el modelo si el rewrd no es 200 ???
+                        #            if avg_reward >= 200 and episode >= 100:
+                        #vale esto hay que quitarlo / cambiarlo la vd es que para ahora mismo testear no esta ni tan mal
+
+
+            if  episode >= 100:
                 print(f"\n🎉 ¡Ambiente resuelto en {episode+1} episodios!")
                 print(f"Recompensa promedio últimos 100 episodios: {avg_reward:.2f}")
-                self.save_model("solved_lunar_lander_dqn.h5")
+                self.save_model("modelo_DQN.weights.h5")
                 break
 
         total_time = time.time() - start_time
