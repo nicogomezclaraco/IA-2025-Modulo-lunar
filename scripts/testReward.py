@@ -1,5 +1,5 @@
-from lunar import LunarLanderEnv
-from DQN import DQNAgent
+from src.environments.lunar import LunarLanderEnv
+from src.agents.DQN import DQNAgent
 import numpy as np
 
 def test_reward_statistics_with_steps(agent=None, episodes=100, max_steps_per_episode=1000, steps_to_run_before_pause=0):
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     agent = DQNAgent(lunar_env, epsilon=0.0)
 
     try:
-        agent.load_model("modelo_DQN_50avrg.weights.h5")
+        agent.load_model("./saved_models/modelo_DQN_50avrg.weights.h5")
         print("✅ Modelo cargado correctamente")
         test_reward_statistics_with_steps(agent=agent, episodes=100, max_steps_per_episode=1000)
     except Exception as e:

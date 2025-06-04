@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from collections import deque
 
-from lunar import LunarLanderEnv
+from src.environments.lunar import LunarLanderEnv
 
 # Lecturas interesantes: 
 # https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf (Playing atari with DQN)
@@ -330,7 +330,7 @@ class DQNAgent():
             if  episode >= 1000:
                 print(f"\n🎉 ¡Ambiente resuelto en {episode+1} episodios!")
                 print(f"Recompensa promedio últimos 100 episodios: {avg_reward:.2f}")
-                self.save_model("modelo_DQN.weights.h5")
+                self.save_model("../../saved_models/modelo_DQN.weights.h5")
                 break
 
         total_time = time.time() - start_time

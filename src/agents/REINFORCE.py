@@ -1,4 +1,4 @@
-from lunar import LunarLanderEnv
+from environments.lunar import LunarLanderEnv
 
 # import torch
 # import tensorflow as tf
