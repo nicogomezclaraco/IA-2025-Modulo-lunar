@@ -70,12 +70,15 @@ class DQNAgent():
     #OG
     #learning_rate=0.001
     #episodes=1500
+    #epsilon_decay=0.995
+    #warmup_steps=1000
+    #target_network_update_freq=200
     def __init__(self, lunar: LunarLanderEnv, gamma=0.99, 
-                epsilon=1.0, epsilon_decay=0.995, epsilon_min=0.01,
-                learning_rate=0.002, batch_size=64, 
+                epsilon=1.0, epsilon_decay=0.998, epsilon_min=0.01,
+                learning_rate=0.001, batch_size=64, 
                 memory_size=10000, episodes=1500, 
-                target_network_update_freq=100,
-                warmup_steps=1000):
+                target_network_update_freq=200,
+                warmup_steps=5000):
         """
         Initialize the DQN agent with the given parameters.
         
@@ -122,13 +125,13 @@ class DQNAgent():
         self.q_network = DQN(
             state_size=observation_space.shape[0],
             action_size=action_space.n,
-            hidden_size=32  #elegir un tamaño de capa oculta // lo he buscado y este parece un buen standar 64 // lo voy a reducir por probar 
+            hidden_size=128  #elegir un tamaño de capa oculta // lo he buscado y este parece un buen standar 64 // lo voy a aumentar buscando un buen modelo
         )
         
         self.target_network = DQN(
             state_size=observation_space.shape[0],
             action_size=action_space.n,
-            hidden_size=32  #elegir un tamaño de capa oculta // lo he buscado y este parece un buen standar
+            hidden_size=128  #elegir un tamaño de capa oculta // lo he buscado y este parece un buen standar
         )
         
         dummy_state = tf.zeros((1, observation_space.shape[0]))
@@ -259,8 +262,6 @@ class DQNAgent():
         rewards_history = []
         losses = []
         best_avg_reward = -float('inf')
-
-        print("Iniciando entrenamiento DQN optimizado...")
         start_time = time.time()
 
         for episode in range(self.episodes):
@@ -285,6 +286,7 @@ class DQNAgent():
                 self.step_count += 1
 
                 # Entrenar cada 4 pasos después del warmup
+                # esto es too much lo voy a cambiar de 4 a 
                 if self.step_count > self.warmup_steps and self.step_count % 4 == 0:
                     loss = self.update_model()
                     episode_loss += loss
@@ -310,24 +312,22 @@ class DQNAgent():
             if avg_reward > best_avg_reward:
                 best_avg_reward = avg_reward
 
-            print(f"Episode: {episode+1}/{self.episodes}, Total Reward: {total_reward:.2f}, "
-              f"Avg Reward (last 100): {avg_reward:.2f}, Epsilon: {self.epsilon:.3f}")
-        
             # Log cada 50 episodios para reducir overhead
-            if episode % 10 == 0 or episode < 10:
+            if episode % 100 == 0 :
                 elapsed_time = time.time() - start_time
                 print(f"Ep: {episode+1}/{self.episodes} | Reward: {total_reward:.1f} | "
                       f"Avg: {avg_reward:.1f} | ε: {self.epsilon:.3f} | "
                       f"Loss: {episode_loss/max(steps_in_episode,1):.4f} | "
                       f"Time: {elapsed_time/60:.1f}min")
                 
+
                         # Early stopping mejorado 
                         # esta mierda que  es lolo que no deja guardar el modelo si el rewrd no es 200 ???
                         #            if avg_reward >= 200 and episode >= 100:
                         #vale esto hay que quitarlo / cambiarlo la vd es que para ahora mismo testear no esta ni tan mal
 
 
-            if  episode >= 100:
+            if  episode >= 1000:
                 print(f"\n🎉 ¡Ambiente resuelto en {episode+1} episodios!")
                 print(f"Recompensa promedio últimos 100 episodios: {avg_reward:.2f}")
                 self.save_model("modelo_DQN.weights.h5")
