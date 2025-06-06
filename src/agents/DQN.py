@@ -1,13 +1,15 @@
+# Otras librerias necesarias.
 import numpy as np
 import random
 import time
 
-# import torch
-
+# Permite crear y entrenar redes neuronales.
 import tensorflow as tf
 
+# Se importa ´deque´ que es una cola de doble extremo (se pueden sacar elementos de ambos extremos) para el buffer.
 from collections import deque
 
+# Se usa el módulo lunar ya definido.
 from src.environments.lunar import LunarLanderEnv
 
 # Lecturas interesantes: 
@@ -15,44 +17,38 @@ from src.environments.lunar import LunarLanderEnv
 # https://www.nature.com/articles/nature14236 (Human level control through RL)
 # https://www.lesswrong.com/posts/kyvCNgx9oAwJCuevo/deep-q-networks-explained
 
+# Clase donde se define la red neuronal a partir de un modelo de TensorFlow.
 class DQN(tf.keras.Model):
-    # hay que quitar el trucanmiento a 32
+    # Se define la red neuronal.
     def __init__(self, state_size, action_size, hidden_size = 32):
         super(DQN, self).__init__()
-        # la capaa de entrada es la input_shape
-        # le he preguntado al chat y me ha recomendado la funcion relu mejor que la sigmoide 
-        # que es la que queria usar y me ha dicho que dos capas internas deberia estar bien
-        self.dense1 = tf.keras.layers.Dense(
-            hidden_size, 
-            activation='relu', 
-            kernel_initializer='he_normal'  # Mejor inicialización
-        )
 
-        self.dense2 = tf.keras.layers.Dense(
-            hidden_size, 
-            activation='relu',
-            kernel_initializer='he_normal'
-        )
-        
-        self.output_layer = tf.keras.layers.Dense(
-            action_size, 
-            activation='linear',
-            kernel_initializer='glorot_uniform'
-        )
+        # Capas ocultas 1 y 2: con tamaño (hidden_size), función de activación de tipo relu (recomendada para redes neuronales, f(x) = max(0, x)) 
+        # y 'he_normal' para tomar pesos aleatorios al inicio.
+        self.dense1 = tf.keras.layers.Dense(hidden_size, activation='relu', kernel_initializer='he_normal')
+        self.dense2 = tf.keras.layers.Dense(hidden_size, activation='relu', kernel_initializer='he_normal')
 
+        # Capa output que nos devolverá los Q values: con tamaño (action_size), función de activación de tipo lineal (la salida es el valor de la red) 
+        # y 'glorot_uniform' para tomar pesos ni muy grandes ni muy pequeños.
+        self.output_layer = tf.keras.layers.Dense(action_size, activation='linear', kernel_initializer='glorot_uniform')
+
+    # Se aplica el vector de 8 estados a la red neuronal (capa a capa) y se obtiene un vector de Q values para cada acción.
     def call(self, inputs):
         x = self.dense1(inputs)
         x = self.dense2(x)
         return self.output_layer(x)
-    
-class ReplayBuffer():
-    def __init__(self, buffer_size=10000):
-        self.buffer = deque(maxlen=buffer_size) # deque es una doble cola que permite añadir y quitar elementos de ambos extremos
 
+# Clase donde el agente guarda sus experiencias, una tupla (state, action, reward, next_state, done).
+class ReplayBuffer():
+    # Se fine el buffer de tipo ´deque´ que es una cola que guarda hasta buffer_size elementos.
+    def __init__(self, buffer_size=10000):
+        self.buffer = deque(maxlen=buffer_size)
+
+    # Añade al buffer una tupla (state, action, reward, next_state, done).
     def push(self, state, action, reward, next_state, done):
-        # insert into buffer
         self.buffer.append((state, action, reward, next_state, done))
-        
+
+    # Elige un conjunto de experiencias con tamaño batch_size aleatorio para entrenar (pop).
     def sample(self, batch_size):
         batch = random.sample(self.buffer, batch_size)
         states = np.array([x[0] for x in batch], dtype=np.float32)
@@ -62,17 +58,13 @@ class ReplayBuffer():
         dones = np.array([x[4] for x in batch], dtype=np.float32)
         return states, actions, rewards, next_states, dones
         
+    # Número de experiencias guardadas en ese momento.
     def __len__(self):
         return len(self.buffer)
-    
+
+# Clase donde se define el agente DQN, los hiperparámetros que toma y sus métodos.
 class DQNAgent():
-    #he cambiado algun parametro por probar 
-    #OG
-    #learning_rate=0.001
-    #episodes=1500
-    #epsilon_decay=0.995
-    #warmup_steps=1000
-    #target_network_update_freq=200
+
     def __init__(self, lunar: LunarLanderEnv, gamma=0.99, 
                 epsilon=1.0, epsilon_decay=0.998, epsilon_min=0.01,
                 learning_rate=0.001, batch_size=64, 
@@ -95,7 +87,7 @@ class DQNAgent():
         target_network_update_freq (int): Frequency of updating the target network.
         """
         
-        # Initialize hyperparameters
+        # Se inicializan los hiperparámetros.
         self.gamma = gamma
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
@@ -104,35 +96,31 @@ class DQNAgent():
         self.batch_size = batch_size
         self.episodes = episodes
         self.warmup_steps = warmup_steps
-
         self.target_updt_freq = target_network_update_freq
         self.step_count = 0
         
-        # Initialize replay memory
-        # a deque is a double sided queue that allows us to append and pop elements from both ends
+        # Se inicializa el buffer donde se guardan las experiencias.
         self.memory = ReplayBuffer(memory_size)
         
-        # Initialize the environment
+        # Se inicializa el módulo lunar.
         self.lunar = lunar
-        
+
+        # 8 variables del entorno que irán variando en cada estado:
+        # Posición X, Posición Y,
+        # Velocidad lineal X, Velocidad lineal Y,
+        # Ángulo, Velocidad angular,
+        # Contacto con la pierna izquierda y Contacto con la pierna derecha.
         observation_space = lunar.env.observation_space
+                    
+        # 4 acciones son las permitidas por el módulo lunar:
+        # No hacer nada,
+        # Encender el motor de orientación izquierdo, Encender el motor de orientación derecho,
+        # Encender el motor principal.
         action_space = lunar.env.action_space
         
-        # La red neuronal debe tener un numero de parametros
-        # de entrada igual al espacio de observaciones
-        # y un numero de salida igual al espacio de acciones.
-        # Asi como un numero de capas intermedias adecuadas.
-        self.q_network = DQN(
-            state_size=observation_space.shape[0],
-            action_size=action_space.n,
-            hidden_size=128  #elegir un tamaño de capa oculta // lo he buscado y este parece un buen standar 64 // lo voy a aumentar buscando un buen modelo
-        )
-        
-        self.target_network = DQN(
-            state_size=observation_space.shape[0],
-            action_size=action_space.n,
-            hidden_size=128  #elegir un tamaño de capa oculta // lo he buscado y este parece un buen standar
-        )
+        # Se construyen la Q-Network principal y la Q-Network objetivo: con mismo tamaño
+        self.q_network = DQN(state_size=observation_space.shape[0], action_size=action_space.n, hidden_size=128)
+        self.target_network = DQN(state_size=observation_space.shape[0], action_size=action_space.n, hidden_size=128)
         
         dummy_state = tf.zeros((1, observation_space.shape[0]))
         _ = self.q_network(dummy_state)
