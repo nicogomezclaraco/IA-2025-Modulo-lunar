@@ -39,7 +39,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Entrenamiento del agente DQN para Lunar Lander")
 
-    parser.add_argument("--episodes", type=int, default=2500, help="Número de episodios de entrenamiento")
+    parser.add_argument("--episodes", type=int, default=1500, help="Número de episodios de entrenamiento")
     parser.add_argument("--render", action="store_true", help="Renderizar el entorno durante el entrenamiento")
     parser.add_argument("--plot", action="store_true", help="Mostrar gráficas de entrenamiento")
 

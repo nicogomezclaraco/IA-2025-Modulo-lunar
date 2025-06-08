@@ -3,7 +3,7 @@ from src.agents.DQN import DQNAgent
 import numpy as np
 import argparse
 
-def test_reward_statistics_with_steps(agent=None, episodes=100, max_steps_per_episode=1000, steps_to_run_before_pause=0):
+def test_reward_statistics_with_steps(agent=None, episodes=100, max_steps_per_episode=1500, steps_to_run_before_pause=0):
     lunar = LunarLanderEnv(render_mode=None)
 
     if agent is not None:
@@ -28,9 +28,18 @@ def test_reward_statistics_with_steps(agent=None, episodes=100, max_steps_per_ep
             if done or counter >= max_steps_per_episode:
                 left_leg = observation[6] > 0.5
                 right_leg = observation[7] > 0.5
+                x, y = observation[0], observation[1]          
+                vx, vy = observation[2], observation[3]       
+                angular_vel = observation[5] 
             
                 if done and left_leg and right_leg:
-                    successes += 1
+                    if done and left_leg and right_leg:
+                        landed_center = abs(x) < 0.2                  # Dps de un monton de pruebas visuales estos creo que son los parametros buenos
+                        soft_landing = abs(vy) < 0.6 and abs(vx) < 0.6  
+                        stable = abs(angular_vel) < 0.2               
+
+                        if landed_center and soft_landing  and stable:
+                            successes += 1
 
                 print(f"🎯 Episode {episode + 1}/{episodes} - Score: {score:.2f} - Steps: {counter} - Total Successes: {successes}")
                 break
@@ -57,7 +66,7 @@ def test_reward_statistics_with_steps(agent=None, episodes=100, max_steps_per_ep
 
     return avg_reward, above_100, above_200
 
-def test_visual(agent=None, episodes=1, max_steps_per_episode=1000):
+def test_visual(agent=None, episodes=1, max_steps_per_episode=1500):
     lunar = LunarLanderEnv(render_mode="human")
     
     if agent is not None:

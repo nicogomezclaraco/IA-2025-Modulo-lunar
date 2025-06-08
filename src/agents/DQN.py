@@ -20,7 +20,7 @@ from src.environments.lunar import LunarLanderEnv
 # Clase donde se define la red neuronal a partir de un modelo de TensorFlow.
 class DQN(tf.keras.Model):
     # Se define la red neuronal.
-    def __init__(self, state_size, action_size, hidden_size = 32):
+    def __init__(self, state_size, action_size, hidden_size = 128):
         super(DQN, self).__init__()
 
         # Capas ocultas 1 y 2: con tamaño (hidden_size), función de activación de tipo relu (recomendada para redes neuronales, f(x) = max(0, x)) 
@@ -67,10 +67,10 @@ class DQNAgent():
      # Se inicializan las 2 redes neuronales (Q-Network y Target Network) y se inicializa el buffer.
     def __init__(self, lunar: LunarLanderEnv, gamma = 0.99, 
                 epsilon = 1.0, epsilon_decay = 0.998, epsilon_min = 0.01,
-                learning_rate = 0.001, batch_size = 64, 
-                memory_size = 10000, episodes = 1500, 
-                target_network_update_freq = 200,
-                warmup_steps = 5000):
+                learning_rate = 0.0005, batch_size = 128, 
+                memory_size = 100000, episodes = 2000, 
+                target_network_update_freq = 400,
+                warmup_steps = 10000):
         """
         Initialize the DQN agent with the given parameters.
         
@@ -119,8 +119,8 @@ class DQNAgent():
         action_space = lunar.env.action_space
         
         # Se construyen la Q-Network principal y la network objetivo: con misma estructura de red neuronal.
-        self.q_network = DQN(state_size = observation_space.shape[0], action_size = action_space.n, hidden_size = 128)
-        self.target_network = DQN(state_size = observation_space.shape[0], action_size = action_space.n, hidden_size = 128)
+        self.q_network = DQN(state_size = observation_space.shape[0], action_size = action_space.n, hidden_size = 64)
+        self.target_network = DQN(state_size = observation_space.shape[0], action_size = action_space.n, hidden_size = 64)
 
         # Se fuerza la construcción de la red en TensorFlow.
         dummy_state = tf.zeros((1, observation_space.shape[0]))
@@ -214,32 +214,20 @@ class DQNAgent():
                 best_avg_reward = avg_reward
 
             # Log cada 50 episodios para reducir overhead
-            if episode % 100 == 0 :
+            if episode % 50 == 0 :
                 elapsed_time = time.time() - start_time
                 print(f"Ep: {episode+1}/{self.episodes} | Reward: {total_reward:.1f} | "
                       f"Avg: {avg_reward:.1f} | ε: {self.epsilon:.3f} | "
                       f"Loss: {episode_loss/max(steps_in_episode,1):.4f} | "
                       f"Time: {elapsed_time/60:.1f}min")
                 
-
-                        # Early stopping mejorado 
-                        # esta mierda que  es lolo que no deja guardar el modelo si el rewrd no es 200 ???
-                        #            if avg_reward >= 200 and episode >= 100:
-                        #vale esto hay que quitarlo / cambiarlo la vd es que para ahora mismo testear no esta ni tan mal
-
-            # Si durante el entrenamiento se cumple una condición buena se guarda el modelo.
-            if  episode >= 1000:
-                print(f"\n🎉 ¡Ambiente resuelto en {episode+1} episodios!")
-                print(f"Recompensa promedio últimos 100 episodios: {avg_reward:.2f}")
-                self.save_model("../../saved_models/modelo_DQN.weights.h5")
-                break
-
         # Se finaliza el entrenamiento
         total_time = time.time() - start_time
         print(f"\n✅ Entrenamiento completado en {total_time/60:.1f} minutos!")
         print(f"Mejor promedio alcanzado: {best_avg_reward:.2f}")
-
-        print("\nTraining completed!")    
+        print("\nTraining completed!")
+        print("Guardando modelo")
+        self.save_model("modelo_DQN.weights.h5")    
         return rewards_history, losses
 
     # Elige una acción siguiendo la política ε-greedy (exploración / explotación).
