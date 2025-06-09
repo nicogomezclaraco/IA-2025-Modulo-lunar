@@ -31,13 +31,14 @@ Puedes instalar las dependencias con pip:
 
 ```bash
 pip install gymnasium numpy matplotlib tensorflow
-
+```
 
 ### Ejecución scripts
 
 Para ejecutar ambos scripts se puede realizar estando en la carpeta raiz del proyecto, y en la terminal ejecutar los siguientes comandos para ejecutar el entrenamiento del modelo y el test para comprobar el modelo:
 ```bash
 python -m scripts.trainDQN --plot --episodes 500
-
+```
 ```bash
 python -m scripts.testReward --visual
+```
