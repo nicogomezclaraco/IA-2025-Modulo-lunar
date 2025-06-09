@@ -31,15 +31,12 @@ def test_reward_statistics_with_steps(agent=None, episodes=100, max_steps_per_ep
                 x, y = observation[0], observation[1]          
                 vx, vy = observation[2], observation[3]       
                 angular_vel = observation[5] 
+                landed_center = abs(x) < 0.2                  
+                soft_landing = abs(vy) < 0.6 and abs(vx) < 0.6  
+                stable = abs(angular_vel) < 0.2 
             
-                if done and left_leg and right_leg:
-                    if done and left_leg and right_leg:
-                        landed_center = abs(x) < 0.2                  # Dps de un monton de pruebas visuales estos creo que son los parametros buenos
-                        soft_landing = abs(vy) < 0.6 and abs(vx) < 0.6  
-                        stable = abs(angular_vel) < 0.2               
-
-                        if landed_center and soft_landing  and stable:
-                            successes += 1
+                if done and left_leg and right_leg and landed_center and soft_landing  and stable:
+                    successes += 1
 
                 print(f"🎯 Episode {episode + 1}/{episodes} - Score: {score:.2f} - Steps: {counter} - Total Successes: {successes}")
                 break
@@ -107,7 +104,7 @@ if __name__ == "__main__":
     agent = DQNAgent(lunar_env, epsilon=0.0)
     
     try:
-        agent.load_model("modelo_DQN-avrg80.weights.h5")
+        agent.load_model("saved_models.modelo_DQN_final.weights.h5")
         print("✅ Modelo cargado correctamente")
         
         if args.visual:
