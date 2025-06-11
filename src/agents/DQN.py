@@ -156,6 +156,8 @@ class DQNAgent():
         # Variables iniciales del entrenamiento.
         rewards_history = [] # Lista para guardar la recompensa total de cada episodio.
         losses = [] # Lista para guardar la pérdida promedio de cada episodio.
+        epsilon_history = []
+        steps_per_episode = []
         best_avg_reward = -float('inf') # Guarda el mejor promedio de recompensa.
         start_time = time.time() # Para medir cuánto tiempo tarda el entrenamiento.
 
@@ -202,6 +204,8 @@ class DQNAgent():
             rewards_history.append(total_reward)
             # Cuando termina el episodio guarda el promedio de pérdida por paso en ese episodio.
             losses.append(episode_loss / steps_in_episode if steps_in_episode > 0 else 0)
+            epsilon_history.append(self.epsilon)
+            steps_per_episode.append(steps_in_episode)
 
             # Se calcula la recompensa promedio obtenida hasta ahora.
             if len(rewards_history) >= 100:
@@ -228,7 +232,7 @@ class DQNAgent():
         print("\nTraining completed!")
         print("Guardando modelo")
         self.save_model("modelo_DQN.weights.h5")    
-        return rewards_history, losses
+        return rewards_history, losses,epsilon_history,steps_per_episode
 
     # Elige una acción siguiendo la política ε-greedy (exploración / explotación).
     def act(self):

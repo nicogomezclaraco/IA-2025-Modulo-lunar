@@ -1,6 +1,6 @@
 import argparse
-from DQN import DQNAgent
-from lunar import LunarLanderEnv
+from src.agents.DQN import DQNAgent
+from src.environments.lunar import LunarLanderEnv
 import matplotlib.pyplot as plt
 import numpy as np
 
